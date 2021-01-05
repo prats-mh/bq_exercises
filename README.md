@@ -322,3 +322,34 @@ SELECT
 FROM 
  raw
 ```
+
+3.d Modify the query to add a field that is difference between the current row and the preceding row
+```sql
+WITH raw AS (
+SELECT
+ -- Dimensions
+ format_date('%Y%m',parse_date('%Y%m%d', date)) AS month_of_year,
+ -- Metrics
+ COUNT(DISTINCT fullVisitorId) AS users,
+FROM 
+ `bigquery-public-data.google_analytics_sample.ga_sessions_20170*`
+WHERE
+ _table_suffix BETWEEN '101' AND '731'
+ AND
+ totals.visits = 1
+GROUP BY 
+ 1
+ ORDER BY
+ 1)
+
+SELECT
+ month_of_year,
+ users,
+ LAG(users) OVER (ORDER BY month_of_year) AS prev_month_users,
+ users - LAG(users) OVER (ORDER BY month_of_year) AS diff_prev_month
+FROM 
+ raw
+ORDER BY 
+ month_of_year 
+
+```
