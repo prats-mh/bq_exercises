@@ -258,3 +258,67 @@ FROM
  raw
 
 ```
+
+3.c.1 Modify the query to add a running total field using joins
+
+```sql
+WITH raw AS (
+SELECT
+ -- Dimensions
+ format_date('%Y%m',parse_date('%Y%m%d', date)) AS month_of_year,
+ -- Metrics
+ COUNT(DISTINCT fullVisitorId) AS users,
+FROM 
+ `bigquery-public-data.google_analytics_sample.ga_sessions_20170*`
+WHERE
+ _table_suffix BETWEEN '101' AND '731'
+ AND
+ totals.visits = 1
+GROUP BY 
+ 1
+ ORDER BY
+ 1)
+
+SELECT 
+ x.month_of_year,
+ x.users,
+ SUM(y.users) AS running_total
+FROM 
+ raw x
+JOIN
+ raw y
+ON 
+  x.month_of_year >= y.month_of_year
+GROUP BY
+1, 2
+ORDER BY 
+x.month_of_year 
+```
+
+3.c.2 Modify the query to add a running total field using window functions
+
+```sql
+WITH raw AS (
+SELECT
+ -- Dimensions
+ format_date('%Y%m',parse_date('%Y%m%d', date)) AS month_of_year,
+ -- Metrics
+ COUNT(DISTINCT fullVisitorId) AS users,
+FROM 
+ `bigquery-public-data.google_analytics_sample.ga_sessions_20170*`
+WHERE
+ _table_suffix BETWEEN '101' AND '731'
+ AND
+ totals.visits = 1
+GROUP BY 
+ 1
+ ORDER BY
+ 1)
+
+SELECT
+ month_of_year,
+ users,
+ SUM(users) OVER (ORDER BY month_of_year) AS running_total 
+FROM 
+ raw
+```
